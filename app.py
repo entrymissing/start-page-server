@@ -5,17 +5,13 @@ import random
 
 app = Flask(__name__)
 
-mantras = ['What is draining my energy?',
-           'Small improvements accumulate and gain interest.']
-
 
 @app.route('/')
 def index():
+    with open('mantras.txt', 'r') as fp:
+        mantras = fp.readlines()
+
     wallpapers = os.listdir('static/wallpapers/')
-    return render_template('index.html', 
+    return render_template('index.html',
                            mantra=random.choice(mantras),
                            wallpaper_file=random.choice(wallpapers))
-
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=80)

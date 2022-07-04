@@ -1,6 +1,9 @@
 # Anything in the wallpapers folder
 static/wallpapers/*.jpg
 
+# swp files are from editing
+*.swp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
