@@ -1,6 +1,9 @@
 # Anything in the wallpapers folder
 static/wallpapers/*.jpg
 
+# The credentials file
+credentials.json
+
 # swp files are from editing
 *.swp
 
