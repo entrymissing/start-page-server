@@ -5,8 +5,6 @@ from google.oauth2 import service_account
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-import os
-import json
 import random
 
 app = Flask(__name__)
@@ -79,8 +77,3 @@ if __name__ == "__main__":
   scheduler.add_job(refresh_file_from_drive, 'interval', minutes=1)
   scheduler.start()
   app.run(host="0.0.0.0", port=8087, debug=True)
-
-  # refresh_file_from_drive()
-
-  # content = parse_markdown('content.md')
-  # print(content)
