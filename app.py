@@ -9,8 +9,13 @@ import random
 
 app = Flask(__name__)
 
+# In-memory cache
+content_cache = {}
+# To make sure the scheduler is only running one instance
+appHasRunBefore = False
 
-def refresh_file_from_drive(encoding='utf-8'):
+
+def refresh_content_cache(encoding='utf-8'):
   # Set up credentials
   SERVICE_ACCOUNT_FILE = 'credentials.json'
   SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
@@ -30,50 +35,56 @@ def refresh_file_from_drive(encoding='utf-8'):
     print(f"Error: Could not decode content using encoding {encoding}")
     return
 
-  with open('content.md', 'w+') as f:
-    f.writelines(content_str)
+  # Update the in-memory cache
+  parse_markdown(content_str)
 
 
-def parse_markdown(filepath):
-  with open(filepath, 'r') as file:
-    lines = [lin.strip() for lin in file.readlines() if lin.strip()]
+def parse_markdown(content_str: str):
+  # Reset the cache
+  content_cache['content'] = content_str
+  content_cache['goals'] = []
+  content_cache['meditations'] = []
 
-  content_dict = {}
+  lines = [lin.strip() for lin in content_str.split('\n') if lin.strip()]
+
   current_key = None
 
   for line in lines:
     if line.startswith('#'):
       current_key = line.lstrip('#').strip().lower()
-      content_dict[current_key] = []
+      content_cache[current_key] = []
     elif line.startswith('-') and current_key:
-      content_dict[current_key].append(line.lstrip('-').strip())
-  return content_dict
+      content_cache[current_key].append(line.lstrip('-').strip())
 
 
 @app.route('/')
 def index():
   token = request.args.get('token')
-  print()
   if token != 'testtoken':
     abort(403)
 
-  # Get goals and meditations from content.md
-  content = parse_markdown('content.md')
-  goals = content['goals']
-  num_pairs = len(content['meditations']) // 2
-  pair_index = random.randint(0, num_pairs - 1)
+  num_pairs = len(content_cache.get('meditations', [])) // 2
+  pair_index = random.randint(0, num_pairs - 1) if num_pairs > 0 else 0
   meditation = {}
-  meditation['title'] = content['meditations'][2 * pair_index]
-  meditation['body'] = content['meditations'][2 * pair_index + 1]
+  if num_pairs > 0:
+    meditation['title'] = content_cache['meditations'][2 * pair_index]
+    meditation['body'] = content_cache['meditations'][2 * pair_index + 1]
 
   # Render the index.html template
   return render_template('index.html',
-                         goals=goals,
+                         goals=content_cache['goals'],
                          meditation=meditation)
 
 
+# Launch the scheduler
+with app.app_context():
+  if not appHasRunBefore:
+    appHasRunBefore = True
+    refresh_content_cache()
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(refresh_content_cache, 'interval', minutes=5)
+    scheduler.start()
+
+
 if __name__ == "__main__":
-  scheduler = BackgroundScheduler(daemon=True)
-  scheduler.add_job(refresh_file_from_drive, 'interval', minutes=1)
-  scheduler.start()
   app.run(host="0.0.0.0", port=8087, debug=True)
