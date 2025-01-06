@@ -43,6 +43,7 @@ def parse_markdown(content_str: str):
   # Reset the cache
   content_cache['content'] = content_str
   content_cache['goals'] = []
+  content_cache['week'] = []
   content_cache['meditations'] = []
 
   lines = [lin.strip() for lin in content_str.split('\n') if lin.strip()]
@@ -73,6 +74,7 @@ def index():
   # Render the index.html template
   return render_template('index.html',
                          goals=content_cache['goals'],
+                         week=content_cache['week'],
                          meditation=meditation)
 
 
