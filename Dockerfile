@@ -1,15 +1,24 @@
-FROM python:3.9-slim-buster
+# Use the official Python image from the Docker Hub
+FROM python:3.9-slim
 
+# Set the working directory in the container
 WORKDIR /app
 
-RUN apt-get update -y && \
-    apt-get install -y python3-pip python3-dev
+# Copy the requirements file into the container
+COPY requirements.txt .
 
-RUN python -m pip install --upgrade pip
+# Install the dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./requirements.txt /app/requirements.txt
-RUN python3 -m pip install -r /app/requirements.txt
+# Copy the rest of the application code into the container
+COPY . .
 
-COPY . /app
+# Set environment variables
+ENV SECRET_KEY='003e5b83e479f107fe33b11afc756d761b56764183843c3b632c71af1cc7cf83'
+ENV DEBUG='False'
 
-CMD gunicorn app:app -w 2 --threads 2 -b 0.0.0.0:80
+# Expose the port the app runs on
+EXPOSE 8091
+
+# Run the Django development server
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8091", "--insecure"]
